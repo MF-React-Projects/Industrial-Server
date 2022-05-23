@@ -17,9 +17,9 @@ async function run() {
         await client.connect();
         const productCollection = client.db('industrial').collection('products');
 
-        //get all products
+        //get 6 products
         app.get('/products', async (req, res) => {
-            const limit = req.query.limit || -1;
+            const limit = parseInt(req.query.limit) || 0;
             const products = await productCollection.find({}).limit(limit).toArray();
             res.send(products);
         });
