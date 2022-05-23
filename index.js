@@ -16,12 +16,28 @@ async function run() {
     try {
         await client.connect();
         const productCollection = client.db('industrial').collection('products');
+        const reviewCollection = client.db('industrial').collection('reviews');
+        const blogCollection = client.db('industrial').collection('blogs');
 
-        //get 6 products
+        //get products
         app.get('/products', async (req, res) => {
             const limit = parseInt(req.query.limit) || 0;
             const products = await productCollection.find({}).limit(limit).toArray();
             res.send(products);
+        });
+
+        //get reviews
+        app.get('/reviews', async (req, res) => {
+            const limit = parseInt(req.query.limit) || 0;
+            const reviews = await reviewCollection.find({}).limit(limit).toArray();
+            res.send(reviews);
+        });
+
+        //get blogs
+        app.get('/blogs', async (req, res) => {
+            const limit = parseInt(req.query.limit) || 0;
+            const blogs = await blogCollection.find({}).limit(limit).toArray();
+            res.send(blogs);
         });
 
     } finally {
