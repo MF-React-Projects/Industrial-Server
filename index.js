@@ -18,6 +18,7 @@ async function run() {
         const productCollection = client.db('industrial').collection('products');
         const reviewCollection = client.db('industrial').collection('reviews');
         const blogCollection = client.db('industrial').collection('blogs');
+        const orderCollection = client.db('industrial').collection('orders');
 
         //get products
         app.get('/products', async (req, res) => {
@@ -45,6 +46,30 @@ async function run() {
             const id = req.params.id;
             const product = await productCollection.findOne({_id: new ObjectId(id)});
             res.send(product);
+        });
+
+        //post order
+        app.post('/order', async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            if (result) {
+                res.send({success: true});
+            } else {
+                res.send({success: false});
+            }
+        });
+
+        //reduce product quantity
+        app.put('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const product = await productCollection.findOne({_id: new ObjectId(id)});
+            const newQuantity = req.body.quantity;
+            const result = await productCollection.updateOne({_id: new ObjectId(id)}, {$set: {quantity: newQuantity}});
+            if (result) {
+                res.send({success: true});
+            } else {
+                res.send({success: false});
+            }
         });
 
     } finally {
