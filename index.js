@@ -44,7 +44,7 @@ async function run() {
         //get product by id
         app.get('/product/:id', async (req, res) => {
             const id = req.params.id;
-            const product = await productCollection.findOne({_id: new ObjectId(id)});
+            const product = await productCollection.findOne({_id: ObjectId(id)});
             res.send(product);
         });
 
@@ -63,8 +63,8 @@ async function run() {
         app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
             const product = await productCollection.findOne({_id: new ObjectId(id)});
-            const newQuantity = req.body.quantity;
-            const result = await productCollection.updateOne({_id: new ObjectId(id)}, {$set: {quantity: newQuantity}});
+            const newQuantity = req.body.inStock;
+            const result = await productCollection.updateOne({_id: new ObjectId(id)}, {$set: {inStock: newQuantity}});
             if (result) {
                 res.send({success: true});
             } else {
