@@ -66,6 +66,17 @@ async function run() {
             res.send(orders);
         });
 
+        //delete order by id
+        app.delete('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const result = await orderCollection.deleteOne({_id: ObjectId(id)});
+            if (result) {
+                res.send({success: true});
+            } else {
+                res.send({success: false});
+            }
+        });
+
         //reduce product quantity
         app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
