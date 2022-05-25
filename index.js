@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const {MongoClient, ServerApiVersion, ObjectID, ObjectId} = require('mongodb');
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -19,6 +20,21 @@ async function run() {
         const reviewCollection = client.db('industrial').collection('reviews');
         const blogCollection = client.db('industrial').collection('blogs');
         const orderCollection = client.db('industrial').collection('orders');
+        const paymentCollection = client.db('industrial').collection('payments');
+
+        app.post('/create-payment-intent', async (req, res)=> {
+            const order = req.body;
+            const price = order.totalPrice;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card'],
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
 
         //get products
         app.get('/products', async (req, res) => {
@@ -66,12 +82,21 @@ async function run() {
             res.send(order);
         });
 
-        //get orders by user email
-        app.get('/orders/:email', async (req, res) => {
-            const email = req.params.email;
-            const orders = await orderCollection.find({email: email}).toArray();
-            res.send(orders);
-        });
+        //update order
+        app.patch('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = {_id: ObjectId(id)};
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const result = await paymentCollection.insertOne(payment);
+            const order = await orderCollection.updateOne(filter, updatedDoc);
+            res.send({result, order});
+        })
 
         //delete order by id
         app.delete('/order/:id', async (req, res) => {
@@ -82,6 +107,13 @@ async function run() {
             } else {
                 res.send({success: false});
             }
+        });
+
+        //get orders by user email
+        app.get('/orders/:email', async (req, res) => {
+            const email = req.params.email;
+            const orders = await orderCollection.find({email: email}).toArray();
+            res.send(orders);
         });
 
         //reduce product quantity
