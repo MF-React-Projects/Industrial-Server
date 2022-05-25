@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const {MongoClient, ServerApiVersion, ObjectID, ObjectId} = require('mongodb');
+const {MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
 require("dotenv").config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const app = express();
@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wpgf3.mongodb.net/?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+const client = new MongoClient(uri, {useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1});
 
 async function run() {
     try {
@@ -22,12 +22,10 @@ async function run() {
         const orderCollection = client.db('industrial').collection('orders');
         const paymentCollection = client.db('industrial').collection('payments');
 
-        app.post('/create-payment-intent', async (req, res)=> {
+        app.post('/create-payment-intent', async (req, res) => {
             const order = req.body;
-            const price = order.totalPrice;
-            const amount = price * 100;
             const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
+                amount: order.totalPrice,
                 currency: 'usd',
                 payment_method_types: ['card'],
             });
@@ -128,6 +126,21 @@ async function run() {
                 res.send({success: false});
             }
         });
+
+        /*
+        * Review
+        */
+        //post review
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            if (result) {
+                res.send({success: true});
+            } else {
+                res.send({success: false});
+            }
+        });
+
 
     } finally {
         // await client.close();
