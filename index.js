@@ -40,6 +40,16 @@ async function run() {
         const paymentCollection = client.db('industrial').collection('payments');
         const userCollection = client.db('industrial').collection('users');
 
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({email: requester});
+            if (requesterAccount.role === 'admin') {
+                next();
+            } else {
+                return res.status(403).json({error: 'Forbidden access'});
+            }
+        }
+
         app.post('/create-payment-intent', verifyJWT, async (req, res)=> {
             const order = req.body;
             const price = order.totalPrice;
@@ -73,14 +83,14 @@ async function run() {
         });
 
         //add product
-        app.post('/products', async (req, res) => {
+        app.post('/products', verifyJWT, verifyAdmin, async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product);
             res.send(result);
         });
 
         //delete product
-        app.delete('/product/:id', async (req, res) => {
+        app.delete('/product/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = {_id: ObjectId(id)};
             const result = await productCollection.deleteOne(query);
@@ -296,7 +306,7 @@ async function run() {
         })
 
         //update user
-        app.put('/user/:email', verifyJWT, async (req, res) => {
+        app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body
             const filter = {email: email};
