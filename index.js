@@ -41,13 +41,6 @@ async function run() {
             res.send(products);
         });
 
-        //get reviews
-        app.get('/reviews', async (req, res) => {
-            const limit = parseInt(req.query.limit) || 0;
-            const reviews = await reviewCollection.find({}).limit(limit).toArray();
-            res.send(reviews);
-        });
-
         //get blogs
         app.get('/blogs', async (req, res) => {
             const limit = parseInt(req.query.limit) || 0;
@@ -130,6 +123,13 @@ async function run() {
         /*
         * Review
         */
+        //get reviews
+        app.get('/reviews', async (req, res) => {
+            const limit = parseInt(req.query.limit) || 0;
+            //lastest first
+            const reviews = await reviewCollection.find({}).sort({_id: -1}).limit(limit).toArray();
+            res.send(reviews);
+        });
         //post review
         app.post('/review', async (req, res) => {
             const review = req.body;
