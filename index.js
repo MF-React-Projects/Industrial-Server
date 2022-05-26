@@ -168,7 +168,7 @@ async function run() {
             res.send(users);
         })
 
-        //
+        //make admin
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const requester = req.decoded.email;
@@ -183,9 +183,39 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc);
             const token = jwt.sign({email: email}, process.env.JWT_SECRET, {expiresIn: '1d'});
             res.send({result, token});
-        })
+        });
 
-        //
+        //remove admin role
+        app.put('/user/remove-admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({email: requester});
+            if (requesterAccount.role !== 'admin') {
+                return res.status(403).json({message: 'Forbidden access'});
+            }
+            const filter = {email: email};
+            const updateDoc = {
+                $set: {role: 'user'}
+            }
+            const result = await userCollection.updateOne(filter, updateDoc);
+            const token = jwt.sign({email: email}, process.env.JWT_SECRET, {expiresIn: '1d'});
+            res.send({result, token});
+        });
+
+        //delete user
+        app.delete('/user/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({email: requester});
+            if (requesterAccount.role !== 'admin') {
+                return res.status(403).json({message: 'Forbidden access'});
+            }
+            const result = await userCollection.deleteOne({email: email});
+            const token = jwt.sign({email: email}, process.env.JWT_SECRET, {expiresIn: '1d'});
+            res.send({result, token});
+        });
+
+        //check if user is admin
         app.get('/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const user = await userCollection.findOne({email: email});
