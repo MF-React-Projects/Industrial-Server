@@ -70,6 +70,21 @@ async function run() {
             res.send(product);
         });
 
+        //add product
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            res.send(result);
+        });
+
+        //delete product
+        app.delete('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const result = await productCollection.deleteOne(query);
+            res.send(result);
+        });
+
         //reduce product quantity
         app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
