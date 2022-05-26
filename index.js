@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 const {MongoClient, ServerApiVersion, ObjectId} = require('mongodb');
 require("dotenv").config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -12,6 +13,22 @@ app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wpgf3.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1});
+
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({error: 'Unathorized access'});
+    }
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).json({error: 'Forbidden access'});
+        }
+        req.decoded = decoded;
+        next();
+    });
+}
 
 async function run() {
     try {
@@ -145,28 +162,50 @@ async function run() {
         /*
         * User
         * */
-        //get users
-        app.get('/users', async (req, res) => {
-            const limit = parseInt(req.query.limit) || 0;
-            const users = await userCollection.find({}).limit(limit).toArray();
+        //get all users
+        app.get('/users', verifyJWT, async (req, res) => {
+            const users = await userCollection.find({}).toArray();
             res.send(users);
-        });
-        //get user by id
-        app.get('/user/:id', async (req, res) => {
-            const id = req.params.id;
-            const user = await userCollection.findOne({_id: ObjectId(id)});
-            res.send(user);
-        });
-        //post user
-        app.post('/user', async (req, res) => {
-            const user = req.body;
-            const result = await userCollection.insertOne(user);
-            if (result) {
-                res.send({success: true});
-            } else {
-                res.send({success: false});
+        })
+
+        //
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({email: requester});
+            if (requesterAccount.role !== 'admin') {
+                return res.status(403).json({message: 'Forbidden access'});
             }
-        });
+            const filter = {email: email};
+            const updateDoc = {
+                $set: {role: 'admin'}
+            }
+            const result = await userCollection.updateOne(filter, updateDoc);
+            const token = jwt.sign({email: email}, process.env.JWT_SECRET, {expiresIn: '1d'});
+            res.send({result, token});
+        })
+
+        //
+        app.get('/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({email: email});
+            const isAdmin = user.role === 'admin';
+            res.send({admin: isAdmin});
+        })
+
+        //update user
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body
+            const filter = {email: email};
+            const options = {upsert: true};
+            const updateDoc = {
+                $set: user
+            }
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            const token = jwt.sign({email: email}, process.env.JWT_SECRET, {expiresIn: '1d'});
+            res.send({result, token});
+        })
 
 
     } finally {
