@@ -40,10 +40,12 @@ async function run() {
         const paymentCollection = client.db('industrial').collection('payments');
         const userCollection = client.db('industrial').collection('users');
 
-        app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', verifyJWT, async (req, res)=> {
             const order = req.body;
+            const price = order.totalPrice;
+            const amount = price * 100;
             const paymentIntent = await stripe.paymentIntents.create({
-                amount: order.totalPrice,
+                amount: amount,
                 currency: 'usd',
                 payment_method_types: ['card'],
             });
@@ -126,6 +128,12 @@ async function run() {
         /*
         * Orders
         * */
+        //get orders
+        app.get('/orders', async (req, res) => {
+            const limit = parseInt(req.query.limit) || 0;
+            const orders = await orderCollection.find({}).limit(limit).toArray();
+            res.send(orders);
+        });
         //post order
         app.post('/order', async (req, res) => {
             const order = req.body;
@@ -138,14 +146,14 @@ async function run() {
         });
 
         //get order by id
-        app.get('/order/:id', async (req, res) => {
+        app.get('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const order = await orderCollection.findOne({_id: ObjectId(id)});
             res.send(order);
         });
 
         //update order
-        app.patch('/order/:id', async (req, res) => {
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const payment = req.body;
             const filter = {_id: ObjectId(id)};
@@ -157,6 +165,20 @@ async function run() {
             }
             const result = await paymentCollection.insertOne(payment);
             const order = await orderCollection.updateOne(filter, updatedDoc);
+            res.send({result, order});
+        })
+
+        //update order
+        app.put('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const order = req.body;
+            const filter = {_id: ObjectId(id)};
+            const updatedDoc = {
+                $set: {
+                    status: order.status
+                }
+            }
+            const result = await orderCollection.updateOne(filter, updatedDoc);
             res.send({result, order});
         })
 
@@ -172,7 +194,7 @@ async function run() {
         });
 
         //get orders by user email
-        app.get('/orders/:email', async (req, res) => {
+        app.get('/orders/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const orders = await orderCollection.find({email: email}).toArray();
             res.send(orders);
