@@ -193,8 +193,15 @@ async function run() {
             res.send({admin: isAdmin});
         })
 
+        //get user by email
+        app.get('/user/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({email: email});
+            res.send(user);
+        })
+
         //update user
-        app.put('/user/:email', async (req, res) => {
+        app.put('/user/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const user = req.body
             const filter = {email: email};
