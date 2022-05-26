@@ -10,7 +10,7 @@ It is a server made with node, express,mongodb
 - Order manage API
 - Order Status Update API
 
-## [Live Demo](https://zoho-26c66.firebaseapp.com/)
+## [Live Demo](https://industrial-4c896.firebaseapp.com/)
 
 ### Design & Developed By
 **_[Mehedi Foysal](https://github.com/mehedifoysal)_**
