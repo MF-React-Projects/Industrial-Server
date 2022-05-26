@@ -21,6 +21,7 @@ async function run() {
         const blogCollection = client.db('industrial').collection('blogs');
         const orderCollection = client.db('industrial').collection('orders');
         const paymentCollection = client.db('industrial').collection('payments');
+        const userCollection = client.db('industrial').collection('users');
 
         app.post('/create-payment-intent', async (req, res) => {
             const order = req.body;
@@ -134,6 +135,32 @@ async function run() {
         app.post('/review', async (req, res) => {
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
+            if (result) {
+                res.send({success: true});
+            } else {
+                res.send({success: false});
+            }
+        });
+
+        /*
+        * User
+        * */
+        //get users
+        app.get('/users', async (req, res) => {
+            const limit = parseInt(req.query.limit) || 0;
+            const users = await userCollection.find({}).limit(limit).toArray();
+            res.send(users);
+        });
+        //get user by id
+        app.get('/user/:id', async (req, res) => {
+            const id = req.params.id;
+            const user = await userCollection.findOne({_id: ObjectId(id)});
+            res.send(user);
+        });
+        //post user
+        app.post('/user', async (req, res) => {
+            const user = req.body;
+            const result = await userCollection.insertOne(user);
             if (result) {
                 res.send({success: true});
             } else {
