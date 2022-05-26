@@ -52,18 +52,15 @@ async function run() {
             });
         })
 
+
+        /*
+        * Products
+        * */
         //get products
         app.get('/products', async (req, res) => {
             const limit = parseInt(req.query.limit) || 0;
             const products = await productCollection.find({}).limit(limit).toArray();
             res.send(products);
-        });
-
-        //get blogs
-        app.get('/blogs', async (req, res) => {
-            const limit = parseInt(req.query.limit) || 0;
-            const blogs = await blogCollection.find({}).limit(limit).toArray();
-            res.send(blogs);
         });
 
         //get product by id
@@ -73,6 +70,47 @@ async function run() {
             res.send(product);
         });
 
+        //reduce product quantity
+        app.put('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const product = await productCollection.findOne({_id: new ObjectId(id)});
+            const newQuantity = req.body.inStock;
+            const result = await productCollection.updateOne({_id: new ObjectId(id)}, {$set: {inStock: newQuantity}});
+            if (result) {
+                res.send({success: true});
+            } else {
+                res.send({success: false});
+            }
+        });
+
+        //edit product
+        app.put('/product/edit/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const product = req.body;
+            const result = await productCollection.updateOne(query, {$set: product});
+            if (result) {
+                res.send({success: true});
+            } else {
+                res.send({success: false});
+            }
+        });
+
+
+        /*
+        * Blogs
+        * */
+        //get blogs
+        app.get('/blogs', async (req, res) => {
+            const limit = parseInt(req.query.limit) || 0;
+            const blogs = await blogCollection.find({}).limit(limit).toArray();
+            res.send(blogs);
+        });
+
+
+        /*
+        * Orders
+        * */
         //post order
         app.post('/order', async (req, res) => {
             const order = req.body;
@@ -125,18 +163,6 @@ async function run() {
             res.send(orders);
         });
 
-        //reduce product quantity
-        app.put('/product/:id', async (req, res) => {
-            const id = req.params.id;
-            const product = await productCollection.findOne({_id: new ObjectId(id)});
-            const newQuantity = req.body.inStock;
-            const result = await productCollection.updateOne({_id: new ObjectId(id)}, {$set: {inStock: newQuantity}});
-            if (result) {
-                res.send({success: true});
-            } else {
-                res.send({success: false});
-            }
-        });
 
         /*
         * Review
@@ -158,6 +184,7 @@ async function run() {
                 res.send({success: false});
             }
         });
+
 
         /*
         * User
