@@ -8,17 +8,9 @@
     "start-dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/programming-hero-web-course1/manufacturer-website-server-side-mehedifoysal.git"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/programming-hero-web-course1/manufacturer-website-server-side-mehedifoysal/issues"
-  },
-  "homepage": "https://github.com/programming-hero-web-course1/manufacturer-website-server-side-mehedifoysal#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.0.1",
